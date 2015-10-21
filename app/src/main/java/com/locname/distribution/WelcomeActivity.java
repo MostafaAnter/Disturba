@@ -6,21 +6,31 @@ import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.IBinder;
 import android.os.PersistableBundle;
 import android.os.SystemClock;
+import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.volley.AuthFailureError;
@@ -32,15 +42,29 @@ import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
-import com.locname.distribution.parsers.TaskParser;
+import com.locname.distribution.profile_utils.ImageIntentHandler;
+import com.locname.distribution.profile_utils.ImageUtils;
 
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.util.HashMap;
 import java.util.Map;
+
+import de.hdodenhof.circleimageview.CircleImageView;
 
 /**
  * Created by Mostafa on 9/12/2015.
  */
 public class WelcomeActivity extends AppCompatActivity {
+
+    CircleImageView mImageView;
+    Button mButtonPick;
+    ImageIntentHandler.ImagePair mImagePair;
+
+
     // define toolbar
     private Toolbar toolbar;
 
@@ -59,17 +83,47 @@ public class WelcomeActivity extends AppCompatActivity {
     private PendingIntent pendingIntent;
     IBinder binder = null;
 
+    TextView tv1, tv;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.welcome_activity);
+        tv1 = (TextView) findViewById(R.id.user_name);
+        tv = (TextView) findViewById(R.id.user_last_name);
         //set toolbar
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
         //get sharedPreference
         mCoordinates = getSharedPreferences(ShareValues.APP_PREFERENCES, MODE_PRIVATE);
+        tv1.setText(mCoordinates.getString(ShareValues.APP_PREFERENCES_USER_NAME, " "));
+        tv.setText(mCoordinates.getString(ShareValues.APP_PREFERENCES_USER_LAST_NAME, " "));
+
+        //get image path
+        String path = mCoordinates.getString(ShareValues.APP_PREFERENCES_PROFILE_PATH, "");
+        if (path != ""){
+
+
+            loadImageFromStorage(path);
+            Log.d("path",mCoordinates.getString(ShareValues.APP_PREFERENCES_PROFILE_PATH, ""));
+        }
+
+        //set image and controller for it
+        mImageView = (CircleImageView) findViewById(R.id.profile_image);
+        mButtonPick = (Button) findViewById(R.id.button_pick);
+        //set when click
+        mButtonPick.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mImagePair = new ImageIntentHandler.ImagePair(mImageView, null);
+                Intent i = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                startActivityForResult(i, ImageIntentHandler.REQUEST_GALLERY);
+
+            }
+        });
+
 
         //activate service
         startAlarmManager();
@@ -77,6 +131,62 @@ public class WelcomeActivity extends AppCompatActivity {
         bindService(intent, mConnection,
                 Context.BIND_AUTO_CREATE);
 
+
+    }
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+
+        super.onActivityResult(requestCode, resultCode, data);
+        ImageIntentHandler intentHandler =
+                new ImageIntentHandler(WelcomeActivity.this, mImagePair)
+                        .folder("Disturba Profile")
+                        .sizeDp(300,400);
+        intentHandler.handleIntent(requestCode, resultCode, data);
+
+
+        // get bitmap and save
+        mImageView.buildDrawingCache();
+        Bitmap bitmap = mImageView.getDrawingCache();
+        String picturePath = saveToInternalSorage(bitmap);
+
+
+        SharedPreferences.Editor editor = mCoordinates.edit();
+        editor.putString(ShareValues.APP_PREFERENCES_PROFILE_PATH, picturePath );
+        editor.commit();
+    }
+
+    private String saveToInternalSorage(Bitmap bitmapImage){
+        ContextWrapper cw = new ContextWrapper(getApplicationContext());
+        // path to /data/data/yourapp/app_data/imageDir
+        File directory = cw.getDir("imageDir", Context.MODE_PRIVATE);
+        // Create imageDir
+        File mypath=new File(directory,"profile.jpg");
+
+        FileOutputStream fos = null;
+        try {
+
+            fos = new FileOutputStream(mypath);
+
+            // Use the compress method on the BitMap object to write image to the OutputStream
+            bitmapImage.compress(Bitmap.CompressFormat.PNG, 100, fos);
+            fos.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return directory.getAbsolutePath();
+    }
+    private void loadImageFromStorage(String path)
+    {
+
+        try {
+            File f=new File(path, "profile.jpg");
+            Bitmap b = BitmapFactory.decodeStream(new FileInputStream(f));
+            mImageView = (CircleImageView) findViewById(R.id.profile_image);
+            mImageView.setImageBitmap(b);
+        }
+        catch (FileNotFoundException e)
+        {
+            e.printStackTrace();
+        }
 
     }
     private void startAlarmManager() {

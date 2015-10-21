@@ -43,6 +43,7 @@ public class LoginActivity extends AppCompatActivity {
 
     private SharedPreferences mToken;
     private static String email, password;
+    private static int status;
 
 
 
@@ -83,35 +84,29 @@ public class LoginActivity extends AppCompatActivity {
 
     public void login(View view) {
 
-        Intent intent = new Intent(this, DirectionActivity.class);
-        intent.putExtra("latitude", /*lat*/30.045249);  //lat ,
-        intent.putExtra("longitude", /*lng*/31.258876); //lng
-        startActivity(intent);
+        /*
+        * check if email and password is valid
+        * */
+        if (!validateEmail()) {
+            return;
+        }
 
-//
-//        /*
-//        * check if email and password is valid
-//        * */
-//        if (!validateEmail()) {
-//            return;
-//        }
-//
-//        if (!validatePassword()) {
-//            return;
-//        }
-//
-//        /*
-//        * check if is online or not if online call server
-//        * */
-//        if (isOnline()) {
-//            email = inputEmail.getText().toString().trim();
-//            password = inputPassword.getText().toString().trim();
-//
-//            requestData("http://distribution.locname.com/laravel/api/login");
-//
-//        } else {
-//            Toast.makeText(this, "Network isn't available", Toast.LENGTH_LONG).show();
-//        }
+        if (!validatePassword()) {
+            return;
+        }
+
+        /*
+        * check if is online or not if online call server
+        * */
+        if (isOnline()) {
+            email = inputEmail.getText().toString().trim();
+            password = inputPassword.getText().toString().trim();
+
+            requestData("http://distribution.locname.com/laravel/api/login");
+
+        } else {
+            Toast.makeText(this, "Network isn't available", Toast.LENGTH_LONG).show();
+        }
     }
 
     private void requestData(String uri) {
@@ -130,9 +125,13 @@ public class LoginActivity extends AppCompatActivity {
 //                        updateDisplay();
                         parseFeed(response);
                         pDialog.dismiss();
-                        Intent intent = new Intent(LoginActivity.this, WelcomeActivity.class);
-                        startActivity(intent);
-                        finish();
+
+                        if (status == 200) {
+                            Intent intent = new Intent(LoginActivity.this, WelcomeActivity.class);
+                            startActivity(intent);
+                            finish();
+                        }else
+                            return;
 
                     }
                 },
@@ -179,19 +178,25 @@ public class LoginActivity extends AppCompatActivity {
 
         try {
             JSONObject jsonRootObject = new JSONObject(content);//done
-            int status = Integer.parseInt(jsonRootObject.optString("status").toString());
+            status = Integer.parseInt(jsonRootObject.optString("status").toString());
 
             if(status != 200){
-                Toast.makeText(LoginActivity.this, " Error", Toast.LENGTH_SHORT).show();
+                JSONObject jsonObject = jsonRootObject.getJSONObject("response");
+                String mes = jsonObject.optString("message");
+                Toast.makeText(LoginActivity.this, mes, Toast.LENGTH_SHORT).show();
             }else {
 //                Intent intent = new Intent(LoginActivity.this, WelcomeActivity.class);
 //                startActivity(intent);
                 JSONObject jsonObject = jsonRootObject.getJSONObject("response");
                 String token = jsonObject.optString("access_token").toString();
+                String user_name = jsonObject.optString("user_first_name");
+                String user_last_name = jsonObject.optString("user_last_name");
                // Toast.makeText(LoginActivity.this, token, Toast.LENGTH_SHORT).show();
                 //put sharedPreference
                 SharedPreferences.Editor editor = mToken.edit();
                 editor.putString(ShareValues.APP_PREFERENCES_ACCESS_TOKEN, token);
+                editor.putString(ShareValues.APP_PREFERENCES_USER_NAME, user_name);
+                editor.putString(ShareValues.APP_PREFERENCES_USER_LAST_NAME, user_last_name);
                 editor.commit();
             }
 
