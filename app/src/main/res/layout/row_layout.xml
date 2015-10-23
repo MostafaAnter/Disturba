@@ -2,8 +2,8 @@
 
 <android.support.v7.widget.CardView
     xmlns:android="http://schemas.android.com/apk/res/android"
-    cardCornerRadius="270dp"
-    cardElevation="20dp"
+    cardCornerRadius="3dp"
+    cardElevation="4dp"
     cardUseCompatPadding="true"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"

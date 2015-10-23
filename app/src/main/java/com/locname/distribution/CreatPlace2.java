@@ -6,11 +6,14 @@ import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
+import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.Editable;
+import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -22,6 +25,9 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,22 +37,25 @@ import java.util.Map;
  */
 public class CreatPlace2 extends AppCompatActivity {
     private SharedPreferences preferences;
+    private static int status;
     /*
     * parameter i'll post
     * */
     private static String place_name;
-    private static String contact_name;
-    private static String phone_number;
-    private static String mobile_number;
-    private static String task_email;
-    private static String task_website;
-    private static String long_coordinate;
-    private static String lat_coordinate;
-    private static String place_details;
+    private static String contact_name = " ";
+    private static String phone_number = " ";
+    private static String mobile_number= " ";
+    private static String task_email = " ";
+    private static String task_website = " ";
+    private static String long_coordinate = " ";
+    private static String lat_coordinate = " ";
+    private static String place_details = " ";
 
     private EditText placeName, contactName,
     phoneNumber, mobileNumber, taskEmail, taskWebsite,
     placeDetails;
+
+    private TextInputLayout inputLayoutPlaceName, inputLayoutEmail;
 
 
     @Override
@@ -55,6 +64,11 @@ public class CreatPlace2 extends AppCompatActivity {
         setContentView(R.layout.creat_location2);
 
         preferences = getSharedPreferences(ShareValues.APP_PREFERENCES, MODE_PRIVATE);
+
+        //set inputLayout
+        // set inputLayout
+        inputLayoutPlaceName = (TextInputLayout) findViewById(R.id.input_layout_place_name);
+        inputLayoutEmail = (TextInputLayout) findViewById(R.id.input_layout_email);
         /*
         * set Edit text
         * */
@@ -88,7 +102,7 @@ public class CreatPlace2 extends AppCompatActivity {
     }
 
     public void save_data(View view) {
-//        save_location();
+        save_location();
     }
     /*
     * text watcher
@@ -128,6 +142,7 @@ public class CreatPlace2 extends AppCompatActivity {
                 case R.id.task_email:
                     //do some thing
                     task_email = taskEmail.getText().toString();
+                    validateEmail();
                     break;
                 case R.id.task_website:
                     //do some thing
@@ -141,6 +156,35 @@ public class CreatPlace2 extends AppCompatActivity {
             }
         }
     }
+    /*
+    * check is email valid or not
+    * */
+    private boolean validateEmail() {
+        String email = taskEmail.getText().toString().trim();
+
+        if (email.isEmpty() || !isValidEmail(email)) {
+            inputLayoutEmail.setError(getString(R.string.err_msg_email));
+            requestFocus(taskEmail);
+            return false;
+        } else {
+            inputLayoutEmail.setErrorEnabled(false);
+        }
+
+        return true;
+    }
+    private static boolean isValidEmail(String email) {
+        return !TextUtils.isEmpty(email) && android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches();
+    }
+    /*
+    *  set focus on specific view in this state edit text will focused
+    * */
+    private void requestFocus(View view) {
+        if (view.requestFocus()) {
+            getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
+        }
+    }
+
+
     /*
     * call api
     * */
@@ -157,7 +201,26 @@ public class CreatPlace2 extends AppCompatActivity {
                     @Override
                     public void onResponse(String response) {
 
-                        Toast.makeText(CreatPlace2.this, response, Toast.LENGTH_LONG).show();
+
+                        try {
+                            JSONObject jsonRootObject = jsonRootObject = new JSONObject(response);
+                            status= Integer.parseInt(jsonRootObject.optString("status").toString());
+                            if(status == 530){
+                                JSONObject jsonObject = jsonRootObject.getJSONObject("response");
+                                String mes = jsonObject.optString("message");
+                                Toast.makeText(CreatPlace2.this, mes, Toast.LENGTH_SHORT).show();
+                            }else if (status == 200){
+                                JSONObject jsonObject = jsonRootObject.getJSONObject("response");
+                                String mes = jsonObject.optString("add_place");
+                                Toast.makeText(CreatPlace2.this, mes, Toast.LENGTH_SHORT).show();
+                            }else {
+                                Toast.makeText(CreatPlace2.this, "some thing wrong!!", Toast.LENGTH_SHORT).show();
+                            }
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+
+
                         pDialog.dismiss();
 
 
@@ -169,7 +232,7 @@ public class CreatPlace2 extends AppCompatActivity {
 
                     @Override
                     public void onErrorResponse(VolleyError ex) {
-                        Toast.makeText(CreatPlace2.this, ex.getMessage(), Toast.LENGTH_LONG).show();
+                        Toast.makeText(CreatPlace2.this, "Retry again! network not available", Toast.LENGTH_LONG).show();
                         pDialog.dismiss();
 
                     }
@@ -213,16 +276,20 @@ public class CreatPlace2 extends AppCompatActivity {
         }
     }
     private void save_location(){
-        if (isOnline()) {
-            if (preferences.getString(ShareValues.APP_PREFERENCES_TASK_ID, null) != null) {
-                requestData("http://distribution.locname.com/laravel/api/trip/tasks/checkin");
+        if (!placeName.getText().toString().trim().isEmpty()) {
+            inputLayoutPlaceName.setErrorEnabled(false);
+            if (isOnline()) {
 
-            }else {
-                Toast.makeText(this, "please restart app", Toast.LENGTH_SHORT).show();
+                requestData("http://distribution.locname.com/laravel/api/place/add");
+
+
+            } else {
+                Toast.makeText(this, "Network isn't available", Toast.LENGTH_LONG).show();
             }
-        } else {
-            Toast.makeText(this, "Network isn't available", Toast.LENGTH_LONG).show();
-        }
+        }else
+            requestFocus(placeName);
+            inputLayoutPlaceName.setError("Enter place name");
+
     }
 
 }

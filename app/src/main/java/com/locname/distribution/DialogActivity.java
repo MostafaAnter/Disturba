@@ -21,6 +21,9 @@ import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -77,7 +80,7 @@ public class DialogActivity extends AppCompatActivity {
         editor.commit();
 
     }
-    private void requestData(String uri) {
+    private void checkRequest(String uri) {
         // show when user click on login
         final ProgressDialog pDialog = new ProgressDialog(this);
         pDialog.setMessage("Loading...");
@@ -91,6 +94,82 @@ public class DialogActivity extends AppCompatActivity {
                     public void onResponse(String response) {
 
                         Toast.makeText(DialogActivity.this, response, Toast.LENGTH_LONG).show();
+
+                        try {
+                            JSONObject jsonRootObject = new JSONObject(response);//done
+                            JSONObject jsonObject = jsonRootObject.getJSONObject("response");
+                            String mes = jsonObject.optString("check_out_date");
+                            Toast.makeText(DialogActivity.this, mes, Toast.LENGTH_SHORT).show();
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+
+                        pDialog.dismiss();
+
+                        //// TODO: 10/15/2015 clear last lat and last lng
+                        Intent intent = new Intent(DialogActivity.this, TaskActivity.class);
+                        startActivity(intent);
+                        DialogActivity.this.finish();
+
+
+
+                    }
+                },
+
+                new Response.ErrorListener() {
+
+                    @Override
+                    public void onErrorResponse(VolleyError ex) {
+                        Toast.makeText(DialogActivity.this, ex.getMessage(), Toast.LENGTH_LONG).show();
+                        pDialog.dismiss();
+
+                    }
+                }) {
+
+            @Override
+            protected Map<String, String> getParams() throws AuthFailureError {
+
+                Map<String, String> map = new HashMap<String, String>();
+                map.put("token", preferences.getString(ShareValues.APP_PREFERENCES_ACCESS_TOKEN, null));
+                map.put("task_code", preferences.getString(ShareValues.APP_PREFERENCES_TASK_ID, null));
+
+
+                return map;
+            }
+
+
+        };
+
+        RequestQueue queue = Volley.newRequestQueue(this);
+        queue.add(request);
+
+
+    }
+
+    private void checkInRequest(String uri) {
+        // show when user click on login
+        final ProgressDialog pDialog = new ProgressDialog(this);
+        pDialog.setMessage("Loading...");
+        pDialog.show();
+
+        StringRequest request = new StringRequest(Request.Method.POST, uri,
+
+                new Response.Listener<String>() {
+
+                    @Override
+                    public void onResponse(String response) {
+
+                        Toast.makeText(DialogActivity.this, response, Toast.LENGTH_LONG).show();
+
+                        try {
+                            JSONObject jsonRootObject = new JSONObject(response);//done
+                            JSONObject jsonObject = jsonRootObject.getJSONObject("response");
+                            String mes = jsonObject.optString("check_in_date");
+                            Toast.makeText(DialogActivity.this, mes, Toast.LENGTH_SHORT).show();
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+
                         pDialog.dismiss();
 
                         //// TODO: 10/15/2015 clear last lat and last lng
@@ -114,7 +193,8 @@ public class DialogActivity extends AppCompatActivity {
             protected Map<String, String> getParams() throws AuthFailureError {
 
                 Map<String, String> map = new HashMap<String, String>();
-                map.put("task_id", preferences.getString(ShareValues.APP_PREFERENCES_TASK_ID, null));
+                map.put("token", preferences.getString(ShareValues.APP_PREFERENCES_ACCESS_TOKEN, null));
+                map.put("task_code", preferences.getString(ShareValues.APP_PREFERENCES_TASK_ID, null));
 
 
                 return map;
@@ -141,7 +221,7 @@ public class DialogActivity extends AppCompatActivity {
     private void checkin(){
         if (isOnline()) {
             if (preferences.getString(ShareValues.APP_PREFERENCES_TASK_ID, null) != null) {
-                requestData("http://distribution.locname.com/laravel/api/trip/tasks/checkin");
+                checkInRequest("http://distribution.locname.com/laravel/api/trip/tasks/checkin");
 
             }else {
                 Toast.makeText(this, "please restart app", Toast.LENGTH_SHORT).show();
@@ -153,7 +233,7 @@ public class DialogActivity extends AppCompatActivity {
     private void checkout(){
         if (isOnline()) {
             if (preferences.getString(ShareValues.APP_PREFERENCES_TASK_ID, null) != null) {
-                requestData("http://distribution.locname.com/laravel/api/trip/tasks/checkout");
+                checkRequest("http://distribution.locname.com/laravel/api/trip/tasks/checkout");
 
             }else {
                 Toast.makeText(this, "please restart app", Toast.LENGTH_SHORT).show();

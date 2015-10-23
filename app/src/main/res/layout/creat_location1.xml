@@ -27,52 +27,61 @@
         android:layout_width="match_parent"
         android:layout_below="@+id/toolb"
         android:layout_height="wrap_content" />
-    <LinearLayout
+
+    <android.support.v7.widget.CardView
         xmlns:android="http://schemas.android.com/apk/res/android"
-        android:orientation="vertical"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:background="@drawable/editstyle"
-        android:layout_centerHorizontal="true"
-        android:paddingLeft="5dp"
+        cardCornerRadius="3dp"
+        cardElevation="4dp"
+        cardUseCompatPadding="true"
+        android:layout_width="match_parent"
         android:layout_alignParentBottom="true"
-        android:paddingRight="5dp"
-        android:layout_marginLeft="10dp"
-        android:layout_marginRight="10dp"
-
-        >
-
-
-        <TextView
-
-            android:layout_marginTop="10dp"
-            android:id="@+id/text1"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_margin="6dp">
+        <LinearLayout
+            xmlns:android="http://schemas.android.com/apk/res/android"
+            android:orientation="vertical"
             android:layout_width="fill_parent"
-            android:layout_height="45dp"
-            android:text="Place information"
-            android:background="@drawable/image_border"
-            android:gravity="center_horizontal"
-            android:layout_marginBottom="5dp"
-
-
-             >
-
-
-        </TextView>
-
-        <Button
-
-            android:layout_width="fill_parent"
-            android:layout_marginBottom="10dp"
             android:layout_height="wrap_content"
-            android:layout_gravity="right|center_vertical"
-            android:text="Next"
+            android:paddingLeft="5dp"
+            android:paddingRight="5dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
 
-            android:background="@drawable/selectable_background"
-            android:textColor="#ffffff"
-            android:onClick="next"
-            android:padding="10dp"
-            />
-    </LinearLayout>
+            >
+
+
+            <TextView
+
+                android:layout_marginTop="10dp"
+                android:id="@+id/text1"
+                android:layout_width="fill_parent"
+                android:layout_height="45dp"
+                android:text="Place information"
+                android:background="@drawable/image_border"
+                android:gravity="center_horizontal|center_vertical"
+                android:layout_marginBottom="5dp"
+
+
+                >
+
+
+            </TextView>
+
+            <Button
+
+                android:layout_width="fill_parent"
+                android:layout_marginBottom="10dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="right|center_vertical"
+                android:text="Next"
+
+                android:background="@drawable/selectable_background"
+                android:textColor="#ffffff"
+                android:onClick="next"
+                android:padding="10dp"
+                />
+        </LinearLayout>
+    </android.support.v7.widget.CardView>
 
 </RelativeLayout>

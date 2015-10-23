@@ -14,4 +14,5 @@ public class ShareValues {
     public static final String APP_PREFERENCES_TRIP_ID = "trip_id"; //string
     public static final String APP_PREFERENCES_DIALOG_OPEN = "dialog_open";//boolean
     public static final String APP_PREFERENCES_PROFILE_PATH = "path";//string
+    public static final String APP_PREFERENCES_START_WORK_STATE = "false";//boolian
 }

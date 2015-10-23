@@ -89,9 +89,11 @@ public class LocalWordService extends Service {
             @Override
             public void onLocationFound(@NonNull Location location) {
                 if (location != null) {
-                    mLastLocation = location;
                     double latitude = location.getLatitude();
                     double longitude = location.getLongitude();
+                    mLastLocation = new Location("lastLocation");
+                    mLastLocation.setLatitude(latitude);
+                    mLastLocation.setLongitude(longitude);
 
                     // El gdeed
 
@@ -259,9 +261,9 @@ public class LocalWordService extends Service {
 
                 Map<String, String> map = new HashMap<String, String>();
                 map.put("token", preferences.getString(ShareValues.APP_PREFERENCES_ACCESS_TOKEN, null));
-                map.put("trip_id", preferences.getString(ShareValues.APP_PREFERENCES_TRIP_ID, null));
-                map.put("current_long",String.valueOf(mLastLocation.getLongitude()));
-                map.put("current_lat", String.valueOf(mLastLocation.getLatitude()));
+                map.put("task_code", preferences.getString(ShareValues.APP_PREFERENCES_TRIP_ID, null));
+                map.put("current_long","" + mLastLocation.getLongitude());
+                map.put("current_lat", "" + mLastLocation.getLatitude());
                 map.put("target_long", preferences.getString(ShareValues.APP_PREFERENCES_TARGET_LONGITUDE, null));
                 map.put("target_lat", preferences.getString(ShareValues.APP_PREFERENCES_TARGET_LATITUDE, null));
 
@@ -288,14 +290,10 @@ public class LocalWordService extends Service {
     }
     private void log(){
         if (isOnline()) {
-            if (preferences.getString(ShareValues.APP_PREFERENCES_TASK_ID, null) != null) {
-                requestData("http://distribution.locname.com/laravel/api/trip/log");
+            requestData("http://distribution.locname.com/laravel/api/trip/log");
 
-            }else {
-                Toast.makeText(this, "please restart app", Toast.LENGTH_SHORT).show();
-            }
         } else {
-            Toast.makeText(this, "Network isn't available", Toast.LENGTH_LONG).show();
+//            Toast.makeText(this, "Network isn't available", Toast.LENGTH_LONG).show();
         }
     }
 }

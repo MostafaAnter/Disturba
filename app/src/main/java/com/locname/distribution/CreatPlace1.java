@@ -1,10 +1,14 @@
 package com.locname.distribution;
 
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
+import android.location.LocationManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.support.v7.app.AppCompatActivity;
 
 /**
@@ -14,6 +18,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.app.Dialog;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
+import android.telephony.TelephonyManager;
+import android.telephony.gsm.GsmCellLocation;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -22,6 +28,12 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.maps.CameraUpdate;
@@ -43,12 +55,25 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 
 public class CreatPlace1 extends AppCompatActivity implements ConnectionCallbacks,
         OnConnectionFailedListener, LocationListener {
+    /*
+    * variable to get location without gps
+    * */
+    private static double lat, lng;
+    private static String mcc;  //Mobile Country Code
+    private static String mnc;  //mobile network code
+    private static String cellid; //Cell ID
+    private static String lac;  //Location Area Code
+    private String API_KEY = "AIzaSyA_4z2vgpIPuK0HvOxdCuEazf4jphtyLSo";
 
     private Toolbar toolbar;
 
@@ -117,7 +142,16 @@ public class CreatPlace1 extends AppCompatActivity implements ConnectionCallback
                 buildGoogleApiClient();
                 createLocationRequest();
                 //test
-                displayLocation();
+                if (checkGPS()) {
+                    displayLocation();
+                }else {
+                    try {
+                        getCellLoc();
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
+                }
 
             }
             else {
@@ -163,8 +197,7 @@ public class CreatPlace1 extends AppCompatActivity implements ConnectionCallback
     }
 
     protected void gotoCurrentLocation() throws IOException {
-        mLastLocation = LocationServices.FusedLocationApi
-                .getLastLocation(mGoogleApiClient);
+
         if (mLastLocation == null) {
             Toast.makeText(this, "Current location isn't available", Toast.LENGTH_SHORT).show();
         }
@@ -292,11 +325,15 @@ public class CreatPlace1 extends AppCompatActivity implements ConnectionCallback
 
     public void next(View view) {
 
-        Intent intent = new Intent(this, CreatPlace2.class);
-        //send mLastLocation
-        intent.putExtra("lat", mLastLocation.getLatitude());
-        intent.putExtra("lng", mLastLocation.getLongitude());
-        startActivity(intent);
+        if (mLastLocation != null) {
+            Intent intent = new Intent(this, CreatPlace2.class);
+            //send mLastLocation
+            intent.putExtra("lat", mLastLocation.getLatitude());
+            intent.putExtra("lng", mLastLocation.getLongitude());
+            startActivity(intent);
+        }
+        else
+            return;
     }
     //current location funcion
     @Override
@@ -310,6 +347,7 @@ public class CreatPlace1 extends AppCompatActivity implements ConnectionCallback
     protected void onPause() {
         super.onPause();
         stopLocationUpdates();
+        finish();
     }
     /**
      * Method to display the location on UI
@@ -333,7 +371,7 @@ public class CreatPlace1 extends AppCompatActivity implements ConnectionCallback
         } else {
 
             Toast.makeText(this, "(Couldn't get the location. Make sure location is enabled on the device)"
-            , Toast.LENGTH_SHORT);
+                    , Toast.LENGTH_SHORT);
         }
     }
 
@@ -425,6 +463,129 @@ public class CreatPlace1 extends AppCompatActivity implements ConnectionCallback
 
 
         return mMap.addCircle(options);
+    }
+    /*
+    * get Location without Gps
+    * */
+    private void getGsmCellLocation() {
+        TelephonyManager telephonyManager = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
+        GsmCellLocation cellLocation = (GsmCellLocation)telephonyManager.getCellLocation();
+        String networkOperator = telephonyManager.getNetworkOperator();
+
+        mcc = networkOperator.substring(0, 3);
+        mnc = networkOperator.substring(3);
+        cellid= "" + cellLocation.getCid();
+        lac = "" + cellLocation.getLac();
+
+    }
+
+    //- post parameter
+    private void requestLocation(String uri) throws JSONException {
+
+
+
+        /*
+        * set json object i will send as param in my request
+        * */
+        JSONObject cellTower = new JSONObject();
+        cellTower.put("cellId", cellid);
+        cellTower.put("locationAreaCode", lac);
+        cellTower.put("mobileCountryCode", mcc);
+        cellTower.put("mobileNetworkCode", mnc);
+
+        JSONArray cellTowers = new JSONArray();
+        cellTowers.put(cellTower);
+
+        JSONObject rootObject = new JSONObject();
+        rootObject.put("cellTowers", cellTowers);
+
+
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, uri, rootObject,
+
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject jsonObject) {
+
+
+                        Log.d("content", jsonObject.toString());
+
+
+                        // parse json
+                        try {
+                            JSONObject object = jsonObject.getJSONObject("location");
+                            lat = object.getDouble("lat");
+                            lng = object.getDouble("lng");
+
+                            Toast.makeText(CreatPlace1.this, "" + lat + "," + lng, Toast.LENGTH_SHORT).show();
+                            // intialize lastLocation
+                            mLastLocation = new Location("dummyprovider");
+                            mLastLocation.setLatitude(lat);
+                            mLastLocation.setLongitude(lng);
+
+
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+
+                        try {
+                            gotoCurrentLocation();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+
+                    }
+                },
+
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError ex) {
+                        Toast.makeText(CreatPlace1.this, "error message", Toast.LENGTH_LONG).show();
+
+                    }
+
+                }
+        );
+
+
+        RequestQueue queue = Volley.newRequestQueue(this);
+        queue.add(request);
+
+
+    }
+
+    protected boolean isOnline() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo netInfo = cm.getActiveNetworkInfo();
+        if (netInfo != null && netInfo.isConnectedOrConnecting()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private void getCellLoc() throws JSONException {
+
+        //get cell information first
+        getGsmCellLocation();
+        if (isOnline()) {
+
+            requestLocation("https://www.googleapis.com/geolocation/v1/geolocate?key=" + API_KEY);
+
+
+        } else {
+            Toast.makeText(this, "Network isn't available", Toast.LENGTH_LONG).show();
+        }
+    }
+    public boolean checkGPS(){
+        LocationManager mlocManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);;
+        boolean enabled = mlocManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+
+        if (enabled){
+            return true;
+        }else
+        {
+            return false;
+        }
     }
 
 }

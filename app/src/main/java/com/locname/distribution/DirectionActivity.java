@@ -7,6 +7,7 @@ import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.location.Address;
 import android.location.Geocoder;
@@ -30,11 +31,13 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.directions.route.AbstractRouting;
 import com.directions.route.Route;
@@ -75,8 +78,10 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
@@ -85,6 +90,8 @@ import rx.functions.Func1;
 
 public class DirectionActivity extends AppCompatActivity implements ConnectionCallbacks,
         OnConnectionFailedListener, LocationListener, RoutingListener {
+
+    private SharedPreferences preferences;
 
     /*
     * variable to get location without gps
@@ -143,7 +150,7 @@ public class DirectionActivity extends AppCompatActivity implements ConnectionCa
     GoogleMap mMap;
 
     private static final float DEFAULTZOOM = 18;
-     // direction activity ui
+    // direction activity ui
     TextView tvTime, tvDistance, tvAddress;
 
     //distance duration url
@@ -162,6 +169,8 @@ public class DirectionActivity extends AppCompatActivity implements ConnectionCa
             //set toolbar
             toolbar = (Toolbar) findViewById(R.id.toolbar);
             setSupportActionBar(toolbar);
+
+            preferences = getSharedPreferences(ShareValues.APP_PREFERENCES, MODE_PRIVATE);
 
             tvTime = (TextView) findViewById(R.id.timeText);
             tvDistance = (TextView) findViewById(R.id.distanceText);
@@ -562,6 +571,18 @@ public class DirectionActivity extends AppCompatActivity implements ConnectionCa
         startActivity(intent);
 
     }
+
+    public void checkOut(View view) {
+        //// TODO: 10/22/2015 checkout
+        check_out();
+    }
+
+    public void checkIn(View view) {
+        //// TODO: 10/22/2015 check in
+        check_in();
+
+    }
+
     //distance duration task
     private class MyTask extends AsyncTask<String, String, String> {
 
@@ -877,6 +898,154 @@ public class DirectionActivity extends AppCompatActivity implements ConnectionCa
 
 
 
+    }
+
+    /*
+    * set check in out request
+    * */
+    private void checkRequest(String uri) {
+        // show when user click on login
+        final ProgressDialog pDialog = new ProgressDialog(this);
+        pDialog.setMessage("Loading...");
+        pDialog.show();
+
+        StringRequest request = new StringRequest(Request.Method.POST, uri,
+
+                new Response.Listener<String>() {
+
+                    @Override
+                    public void onResponse(String response) {
+
+                        Toast.makeText(DirectionActivity.this, response, Toast.LENGTH_LONG).show();
+
+                        try {
+                            JSONObject jsonRootObject = new JSONObject(response);//done
+                            JSONObject jsonObject = jsonRootObject.getJSONObject("response");
+                            String mes = jsonObject.optString("check_out_date");
+                            Toast.makeText(DirectionActivity.this, mes, Toast.LENGTH_SHORT).show();
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+
+                        pDialog.dismiss();
+
+                        //// TODO: 10/15/2015 clear last lat and last lng
+                        Intent intent = new Intent(DirectionActivity.this, TaskActivity.class);
+                        startActivity(intent);
+                        DirectionActivity.this.finish();
+
+
+
+                    }
+                },
+
+                new Response.ErrorListener() {
+
+                    @Override
+                    public void onErrorResponse(VolleyError ex) {
+                        Toast.makeText(DirectionActivity.this, ex.getMessage(), Toast.LENGTH_LONG).show();
+                        pDialog.dismiss();
+
+                    }
+                }) {
+
+            @Override
+            protected Map<String, String> getParams() throws AuthFailureError {
+
+                Map<String, String> map = new HashMap<String, String>();
+                map.put("token", preferences.getString(ShareValues.APP_PREFERENCES_ACCESS_TOKEN, null));
+                map.put("task_code", preferences.getString(ShareValues.APP_PREFERENCES_TASK_ID, null));
+
+
+                return map;
+            }
+
+
+        };
+
+        RequestQueue queue = Volley.newRequestQueue(this);
+        queue.add(request);
+
+
+    }
+
+    private void checkInRequest(String uri) {
+        // show when user click on login
+        final ProgressDialog pDialog = new ProgressDialog(this);
+        pDialog.setMessage("Loading...");
+        pDialog.show();
+
+        StringRequest request = new StringRequest(Request.Method.POST, uri,
+
+                new Response.Listener<String>() {
+
+                    @Override
+                    public void onResponse(String response) {
+
+                        Toast.makeText(DirectionActivity.this, response, Toast.LENGTH_LONG).show();
+
+                        try {
+                            JSONObject jsonRootObject = new JSONObject(response);//done
+                            JSONObject jsonObject = jsonRootObject.getJSONObject("response");
+                            String mes = jsonObject.optString("check_in_date");
+                            Toast.makeText(DirectionActivity.this, mes, Toast.LENGTH_SHORT).show();
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+
+                        pDialog.dismiss();
+
+                        //// TODO: 10/15/2015 clear last lat and last lng
+
+
+
+                    }
+                },
+
+                new Response.ErrorListener() {
+
+                    @Override
+                    public void onErrorResponse(VolleyError ex) {
+                        Toast.makeText(DirectionActivity.this, ex.getMessage(), Toast.LENGTH_LONG).show();
+                        pDialog.dismiss();
+
+                    }
+                }) {
+
+            @Override
+            protected Map<String, String> getParams() throws AuthFailureError {
+
+                Map<String, String> map = new HashMap<String, String>();
+                map.put("token", preferences.getString(ShareValues.APP_PREFERENCES_ACCESS_TOKEN, null));
+                map.put("task_code", preferences.getString(ShareValues.APP_PREFERENCES_TASK_ID, null));
+
+
+                return map;
+            }
+
+
+        };
+
+        RequestQueue queue = Volley.newRequestQueue(this);
+        queue.add(request);
+
+
+    }
+
+
+    private void check_in(){
+        if (isOnline()) {
+            checkInRequest("http://distribution.locname.com/laravel/api/trip/tasks/checkin");
+        } else {
+            Toast.makeText(this, "Network isn't available", Toast.LENGTH_LONG).show();
+        }
+    }
+    private void check_out(){
+        if (isOnline()) {
+            checkRequest("http://distribution.locname.com/laravel/api/trip/tasks/checkout");
+        } else {
+            Toast.makeText(this, "Network isn't available", Toast.LENGTH_LONG).show();
+        }
     }
 
 

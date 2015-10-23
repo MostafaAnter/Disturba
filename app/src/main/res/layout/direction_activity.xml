@@ -152,7 +152,8 @@
                     fab:fab_colorNormal="@color/blue_semi_transparent_pressed"
                     fab:fab_colorPressed="@color/colorPrimary"
                     app:fab_icon="@drawable/ic_action_door_out"
-                    fab:fab_size="mini"/>
+                    fab:fab_size="mini"
+                    android:onClick="checkOut"/>
 
                 <com.getbase.floatingactionbutton.FloatingActionButton
                     android:id="@+id/action_b"
@@ -162,7 +163,8 @@
                     fab:fab_title="Action with a very long name that won\'t fit on the screen"
                     fab:fab_colorPressed="@color/colorPrimary"
                     app:fab_icon="@drawable/ic_action_door"
-                    fab:fab_size="mini"/>
+                    fab:fab_size="mini"
+                    android:onClick="checkIn"/>
 
             </com.getbase.floatingactionbutton.FloatingActionsMenu>
 

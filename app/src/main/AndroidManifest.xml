@@ -62,7 +62,6 @@
                   android:screenOrientation="portrait"/>
         <activity android:name=".DialogActivity"
                   android:theme="@style/Base.Theme.AppCompat.Dialog"/>
-        <activity android:name=".TripActivity"/>
 
         <!-- service component -->
         <receiver android:name=".GpsTrackerBootReceiver">

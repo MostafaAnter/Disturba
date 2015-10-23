@@ -20,7 +20,7 @@
 
     <color name="colorPrimary">#3494d3</color>
     <color name="colorPrimaryDark">#266f9f</color>
-    <color name="colorAccent">#FF4081</color>
+    <color name="colorAccent">#3494d3</color>
     <color name="textColorPrimary">#FFFFFF</color>
     <color name="windowBackground">#FFFFFF</color>
     <color name="navigationBarColor">#000000</color>

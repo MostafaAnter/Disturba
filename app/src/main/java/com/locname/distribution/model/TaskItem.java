@@ -7,16 +7,7 @@ public class TaskItem {
     private String task_name;
     private String task_details;
     private String task_id;
-    private int status;
     private double lat,lng;
-
-    public int getStatus() {
-        return status;
-    }
-
-    public void setStatus(int status) {
-        this.status = status;
-    }
 
     public String getTask_id() {
         return task_id;

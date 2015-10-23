@@ -23,12 +23,14 @@ import android.os.PersistableBundle;
 import android.os.SystemClock;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.SwitchCompat;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -46,6 +48,9 @@ import com.locname.distribution.profile_utils.ImageIntentHandler;
 import com.locname.distribution.profile_utils.ImageUtils;
 
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -58,7 +63,10 @@ import de.hdodenhof.circleimageview.CircleImageView;
 /**
  * Created by Mostafa on 9/12/2015.
  */
-public class WelcomeActivity extends AppCompatActivity {
+public class WelcomeActivity extends AppCompatActivity implements
+        CompoundButton.OnCheckedChangeListener {
+
+    private static int status;
 
     CircleImageView mImageView;
     Button mButtonPick;
@@ -84,6 +92,13 @@ public class WelcomeActivity extends AppCompatActivity {
     IBinder binder = null;
 
     TextView tv1, tv;
+    SwitchCompat switchCompat;
+
+    /*
+    * flage to mange switch programary or humanly
+    * */
+
+    private static Boolean mFlag = false;
 
 
     @Override
@@ -92,6 +107,12 @@ public class WelcomeActivity extends AppCompatActivity {
         setContentView(R.layout.welcome_activity);
         tv1 = (TextView) findViewById(R.id.user_name);
         tv = (TextView) findViewById(R.id.user_last_name);
+        //set switch button
+        switchCompat = (SwitchCompat) findViewById(R.id
+                .switch_compat);
+        switchCompat.setSwitchPadding(40);
+        switchCompat.setOnCheckedChangeListener(this);
+
         //set toolbar
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -100,6 +121,11 @@ public class WelcomeActivity extends AppCompatActivity {
         mCoordinates = getSharedPreferences(ShareValues.APP_PREFERENCES, MODE_PRIVATE);
         tv1.setText(mCoordinates.getString(ShareValues.APP_PREFERENCES_USER_NAME, " "));
         tv.setText(mCoordinates.getString(ShareValues.APP_PREFERENCES_USER_LAST_NAME, " "));
+
+        switchCompat.setChecked(mCoordinates.getBoolean(ShareValues.APP_PREFERENCES_START_WORK_STATE, false));
+
+
+
 
         //get image path
         String path = mCoordinates.getString(ShareValues.APP_PREFERENCES_PROFILE_PATH, "");
@@ -264,9 +290,7 @@ public class WelcomeActivity extends AppCompatActivity {
                 startActivity(intent);
                 break;
 
-            case R.id.stopWorking:
-                finishWork();
-                break;
+
             default:
                 break;
         }
@@ -274,17 +298,7 @@ public class WelcomeActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    public void goToTasks(View view) {
 
-        // check if there is google service or not
-        if (servicesOK()) {
-            startWork();
-//            Intent intent = new Intent(WelcomeActivity.this, TripActivity.class);
-//            startActivity(intent);
-
-        }
-
-    }
     public boolean servicesOK() {
         int isAvailable = GooglePlayServicesUtil.isGooglePlayServicesAvailable(this);
 
@@ -315,14 +329,34 @@ public class WelcomeActivity extends AppCompatActivity {
 
                     @Override
                     public void onResponse(String response) {
-//
-                            Toast.makeText(WelcomeActivity.this, response, Toast.LENGTH_SHORT).show();
-                        Intent intent = new Intent(WelcomeActivity.this, TripActivity.class);
-                        startActivity(intent);
 
-
+                        try {
+                            JSONObject jsonRootObject = jsonRootObject = new JSONObject(response);
+                            status= Integer.parseInt(jsonRootObject.optString("status").toString());
+                            if(status == 601){
+                                JSONObject jsonObject = jsonRootObject.getJSONObject("response");
+                                String mes = jsonObject.optString("work_status");
+                                Toast.makeText(WelcomeActivity.this, mes, Toast.LENGTH_SHORT).show();
+                            }else if (status == 530){
+                                JSONObject jsonObject = jsonRootObject.getJSONObject("response");
+                                String mes = jsonObject.optString("work_status");
+                                Toast.makeText(WelcomeActivity.this, mes, Toast.LENGTH_SHORT).show();
+                            }else if (status == 200){
+                                JSONObject jsonObject = jsonRootObject.getJSONObject("response");
+                                String mes = jsonObject.optString("work_status");
+                                Toast.makeText(WelcomeActivity.this, mes, Toast.LENGTH_SHORT).show();
+                            }else {
+                                Toast.makeText(WelcomeActivity.this, "some thing wrong!!", Toast.LENGTH_SHORT).show();
+                            }
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
                         pDialog.dismiss();
 
+//                        if (status == 200) {
+//                            Intent intent = new Intent(WelcomeActivity.this, TaskActivity.class);
+//                            startActivity(intent);
+//                        }
 
 
                     }
@@ -332,7 +366,7 @@ public class WelcomeActivity extends AppCompatActivity {
 
                     @Override
                     public void onErrorResponse(VolleyError ex) {
-                        Toast.makeText(WelcomeActivity.this, ex.getMessage(), Toast.LENGTH_LONG).show();
+                        Toast.makeText(WelcomeActivity.this, "Retry again! network not available", Toast.LENGTH_LONG).show();
                         pDialog.dismiss();
 
                     }
@@ -369,8 +403,29 @@ public class WelcomeActivity extends AppCompatActivity {
 
                     @Override
                     public void onResponse(String response) {
-//
-                        Toast.makeText(WelcomeActivity.this, response, Toast.LENGTH_SHORT).show();
+
+                        try {
+                            JSONObject jsonRootObject = jsonRootObject = new JSONObject(response);
+                            status= Integer.parseInt(jsonRootObject.optString("status").toString());
+                            if(status == 601){
+                                JSONObject jsonObject = jsonRootObject.getJSONObject("response");
+                                String mes = jsonObject.optString("work_status");
+                                Toast.makeText(WelcomeActivity.this, mes, Toast.LENGTH_SHORT).show();
+                            }else if (status == 530){
+                                JSONObject jsonObject = jsonRootObject.getJSONObject("response");
+                                String mes = jsonObject.optString("work_status");
+                                Toast.makeText(WelcomeActivity.this, mes, Toast.LENGTH_SHORT).show();
+                            }else if (status == 200){
+                                JSONObject jsonObject = jsonRootObject.getJSONObject("response");
+                                String mes = jsonObject.optString("work_status");
+                                Toast.makeText(WelcomeActivity.this, mes, Toast.LENGTH_SHORT).show();
+                            }else {
+                                Toast.makeText(WelcomeActivity.this, "some thing wrong!!", Toast.LENGTH_SHORT).show();
+                            }
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+
 
                         pDialog.dismiss();
 
@@ -383,7 +438,7 @@ public class WelcomeActivity extends AppCompatActivity {
 
                     @Override
                     public void onErrorResponse(VolleyError ex) {
-                        Toast.makeText(WelcomeActivity.this, ex.getMessage(), Toast.LENGTH_LONG).show();
+                        Toast.makeText(WelcomeActivity.this, "Retry again! network not available", Toast.LENGTH_LONG).show();
                         pDialog.dismiss();
 
                     }
@@ -427,7 +482,7 @@ public class WelcomeActivity extends AppCompatActivity {
                 requestData("http://distribution.locname.com/laravel/api/work/start");
 
             }else {
-                Toast.makeText(this, "please Logout and Login again", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "please login again!!", Toast.LENGTH_SHORT).show();
             }
         } else {
             Toast.makeText(this, "Network isn't available", Toast.LENGTH_LONG).show();
@@ -450,5 +505,37 @@ public class WelcomeActivity extends AppCompatActivity {
     }
 
 
+    @Override
+    public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+        switch (compoundButton.getId()) {
+            case R.id.switch_compat:
+                if (mFlag) {
+                    if (isChecked){
+                        //start work
+                        startWork();//
+                        SharedPreferences.Editor editor = mCoordinates.edit();
+                        editor.putBoolean(ShareValues.APP_PREFERENCES_START_WORK_STATE, isChecked);
+                        editor.commit();
+                        Log.i("switch_compat", isChecked + "");
+                    }else {
+                        //end work
+                        finishWork();
+                        SharedPreferences.Editor editor = mCoordinates.edit();
+                        editor.putBoolean(ShareValues.APP_PREFERENCES_START_WORK_STATE, isChecked);
+                        editor.commit();
+                        Log.i("switch_compat", isChecked + "");
+                    }
+                    break;
+                }else {
+                    mFlag = true;
+                    break;
+                }
 
+        }
+    }
+
+    public void getTasks(View view) {
+        Intent intent = new Intent(WelcomeActivity.this, TaskActivity.class);
+                            startActivity(intent);
+    }
 }
