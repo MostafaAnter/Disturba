@@ -135,6 +135,7 @@ public class LocalWordService extends Service {
         // post params
         if (mLastLocation != null) {
             log();
+
         }
 
 
@@ -152,7 +153,7 @@ public class LocalWordService extends Service {
         mNM.cancel(NOTIFICATION);
 
         // Tell the user we stopped.
-        Toast.makeText(this, R.string.local_service_stopped, Toast.LENGTH_SHORT).show();
+        //Toast.makeText(this, R.string.local_service_stopped, Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -260,12 +261,12 @@ public class LocalWordService extends Service {
             protected Map<String, String> getParams() throws AuthFailureError {
 
                 Map<String, String> map = new HashMap<String, String>();
-                map.put("token", preferences.getString(ShareValues.APP_PREFERENCES_ACCESS_TOKEN, null));
-                map.put("task_code", preferences.getString(ShareValues.APP_PREFERENCES_TRIP_ID, null));
-                map.put("current_long","" + mLastLocation.getLongitude());
-                map.put("current_lat", "" + mLastLocation.getLatitude());
-                map.put("target_long", preferences.getString(ShareValues.APP_PREFERENCES_TARGET_LONGITUDE, null));
-                map.put("target_lat", preferences.getString(ShareValues.APP_PREFERENCES_TARGET_LATITUDE, null));
+                map.put("token", preferences.getString(ShareValues.APP_PREFERENCES_ACCESS_TOKEN, " "));
+                map.put("task_code", preferences.getString(ShareValues.APP_PREFERENCES_TASK_ID, " "));
+                map.put("current_long",String.valueOf(mLastLocation.getLongitude()));
+                map.put("current_lat",String.valueOf(mLastLocation.getLatitude()));
+                map.put("target_long", preferences.getString(ShareValues.APP_PREFERENCES_TARGET_LONGITUDE, " "));
+                map.put("target_lat", preferences.getString(ShareValues.APP_PREFERENCES_TARGET_LATITUDE, " "));
 
                 return map;
             }
@@ -290,7 +291,7 @@ public class LocalWordService extends Service {
     }
     private void log(){
         if (isOnline()) {
-            requestData("http://distribution.locname.com/laravel/api/trip/log");
+            requestData("http://distribution.locname.com/laravel/api/tasks/log");
 
         } else {
 //            Toast.makeText(this, "Network isn't available", Toast.LENGTH_LONG).show();

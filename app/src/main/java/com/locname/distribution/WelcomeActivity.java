@@ -245,8 +245,8 @@ public class WelcomeActivity extends AppCompatActivity implements
                                        IBinder binder) {
             LocalWordService.LocalBinder b = (LocalWordService.LocalBinder) binder;
             s = b.getService();
-            Toast.makeText(WelcomeActivity.this, "Connected", Toast.LENGTH_SHORT)
-                    .show();
+            //Toast.makeText(WelcomeActivity.this, "Connected", Toast.LENGTH_SHORT)
+              //      .show();
         }
 
         public void onServiceDisconnected(ComponentName className) {

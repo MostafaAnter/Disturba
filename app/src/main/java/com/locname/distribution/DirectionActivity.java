@@ -916,12 +916,12 @@ public class DirectionActivity extends AppCompatActivity implements ConnectionCa
                     @Override
                     public void onResponse(String response) {
 
-                        Toast.makeText(DirectionActivity.this, response, Toast.LENGTH_LONG).show();
+
 
                         try {
                             JSONObject jsonRootObject = new JSONObject(response);//done
                             JSONObject jsonObject = jsonRootObject.getJSONObject("response");
-                            String mes = jsonObject.optString("check_out_date");
+                            String mes = jsonObject.optString("check_out_message");
                             Toast.makeText(DirectionActivity.this, mes, Toast.LENGTH_SHORT).show();
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -982,12 +982,12 @@ public class DirectionActivity extends AppCompatActivity implements ConnectionCa
                     @Override
                     public void onResponse(String response) {
 
-                        Toast.makeText(DirectionActivity.this, response, Toast.LENGTH_LONG).show();
+
 
                         try {
                             JSONObject jsonRootObject = new JSONObject(response);//done
                             JSONObject jsonObject = jsonRootObject.getJSONObject("response");
-                            String mes = jsonObject.optString("check_in_date");
+                            String mes = jsonObject.optString("check_in_message");
                             Toast.makeText(DirectionActivity.this, mes, Toast.LENGTH_SHORT).show();
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -1035,14 +1035,16 @@ public class DirectionActivity extends AppCompatActivity implements ConnectionCa
 
     private void check_in(){
         if (isOnline()) {
-            checkInRequest("http://distribution.locname.com/laravel/api/trip/tasks/checkin");
+            checkInRequest("http://distribution.locname.com/laravel/api/tasks/checkin");
         } else {
             Toast.makeText(this, "Network isn't available", Toast.LENGTH_LONG).show();
         }
     }
     private void check_out(){
         if (isOnline()) {
-            checkRequest("http://distribution.locname.com/laravel/api/trip/tasks/checkout");
+            checkRequest("http://distribution.locname.com/laravel/api/tasks/checkout");
+
+
         } else {
             Toast.makeText(this, "Network isn't available", Toast.LENGTH_LONG).show();
         }

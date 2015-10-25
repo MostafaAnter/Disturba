@@ -39,10 +39,10 @@ import java.util.Map;
 public class TaskActivity extends AppCompatActivity {
     private Toolbar toolbar;
 
-    private CustomTask adapter;
+    private CustomTask adapter, adapter1;
     SharedPreferences mCoordinates;
-    private static ArrayList<TaskItem> task_items, all_item;
-    private ListView activeList;
+    private static ArrayList<TaskItem> task_items, all_item, not_active_task_item;
+    private ListView activeList, nonactiveList;
 
 
     @Override
@@ -60,7 +60,9 @@ public class TaskActivity extends AppCompatActivity {
         //---------------------------//
         task_items = new ArrayList<>();
         all_item = new ArrayList<>();
+        not_active_task_item = new ArrayList<>();
         activeList = (ListView) findViewById(R.id.ListView1);
+        nonactiveList = (ListView) findViewById(R.id.ListView2);
         activeList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 
 
@@ -81,6 +83,12 @@ public class TaskActivity extends AppCompatActivity {
             }
 
 
+        });
+        nonactiveList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                Toast.makeText(TaskActivity.this, " " + "Not Active !", Toast.LENGTH_LONG).show();
+            }
         });
         loadTrips();
 
@@ -186,16 +194,28 @@ public class TaskActivity extends AppCompatActivity {
     }
     protected void updateDisplay() {
         for (TaskItem item:all_item) {
-            task_items.add(item);
+
+            if (item.getTask_details().equalsIgnoreCase("canceled") || item.getTask_details().equalsIgnoreCase("finished")) {
+                not_active_task_item.add(item);
+            }else {
+                task_items.add(item);
+            }
         }
          //------------- list--------------//
         adapter = new CustomTask(this, task_items);
         activeList.setAdapter(adapter);
+
+
+        adapter1 = new CustomTask(this, not_active_task_item);
+        nonactiveList.setAdapter(adapter1);
+
+
     }
 
 
     public void reload(View view) {
         task_items.clear();
+        not_active_task_item.clear();
         loadTrips();
 
     }
