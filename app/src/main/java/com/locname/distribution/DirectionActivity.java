@@ -88,9 +88,7 @@ import rx.functions.Action1;
 import rx.functions.Func1;
 
 
-public class DirectionActivity extends AppCompatActivity implements ConnectionCallbacks,
-        OnConnectionFailedListener, LocationListener, RoutingListener {
-
+public class DirectionActivity extends AppCompatActivity implements  RoutingListener {
     private SharedPreferences preferences;
 
     /*
@@ -116,35 +114,27 @@ public class DirectionActivity extends AppCompatActivity implements ConnectionCa
 
     private static LatLng end;
     private static LatLng start;
-
-
-    //marker to current location
-    Marker marker;
     Marker startMarker, endMarker;
 
 
     // get current location values
+
+    private LocationTracker locationTracker;
+    TrackerSettings settings =
+            new TrackerSettings()
+                    .setUseGPS(true)
+                    .setUseNetwork(false)
+                    .setUsePassive(true)
+                    .setTimeBetweenUpdates(30 * 1000)    // 30 second update
+                    .setMetersBetweenUpdates(100);
+
     // LogCat tag
     private static final String TAG = CreatPlace1.class.getSimpleName();
 
     private final static int PLAY_SERVICES_RESOLUTION_REQUEST = 1000;
 
     private Location mLastLocation;
-
-    // Google client to interact with Google API
-    private GoogleApiClient mGoogleApiClient;
-
-    // boolean flag to toggle periodic location updates
-    private boolean mRequestingLocationUpdates = false;
-
-    private LocationRequest mLocationRequest;
-
-    // Location updates intervals in sec
-    private static int UPDATE_INTERVAL = 10000; // 10 sec
-    private static int FATEST_INTERVAL = 5000; // 5 sec
-    private static int DISPLACEMENT = 10; // 10 meters
-
-    // end current location values
+   // end current location values
 
     private static final int GPS_ERRORDIALOG_REQUEST = 9001;
     GoogleMap mMap;
@@ -177,15 +167,9 @@ public class DirectionActivity extends AppCompatActivity implements ConnectionCa
             tvAddress = (TextView) findViewById(R.id.addressText);
 
             if (initMap()) {
-                // Building the GoogleApi client
-                buildGoogleApiClient();
-                createLocationRequest();
-                //test
-                try {
-                    displayLocation();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                //// TODO: 10/25/2015 load current location
+                getCurrentLocation();
+
 
                 //repeat task
                 mHandler = new Handler();
@@ -287,9 +271,7 @@ public class DirectionActivity extends AppCompatActivity implements ConnectionCa
         MapStateManager mgr = new MapStateManager(this);
         mgr.saveMapState(mMap);
 
-        if (mGoogleApiClient.isConnected()) {
-            mGoogleApiClient.disconnect();
-        }
+
     }
 
     @Override
@@ -304,20 +286,14 @@ public class DirectionActivity extends AppCompatActivity implements ConnectionCa
             mMap.setMapType(mgr.getSavedMapType());
 
         }
-        // Resuming the periodic location updates
-        if (mGoogleApiClient.isConnected() && mRequestingLocationUpdates) {
-            startLocationUpdates();
 
-        }
     }
 
     //current location funcion
     @Override
     protected void onStart() {
         super.onStart();
-        if (mGoogleApiClient != null) {
-            mGoogleApiClient.connect();
-        }
+
     }
     @Override
     protected void onPause() {
@@ -325,7 +301,7 @@ public class DirectionActivity extends AppCompatActivity implements ConnectionCa
 
         // must stop
         stopRepeatingTask();
-        stopLocationUpdates();
+
     }
     /**
      * Method to display the location on UI
@@ -333,8 +309,7 @@ public class DirectionActivity extends AppCompatActivity implements ConnectionCa
     //edit to manpulate with routing
     private void displayLocation() throws IOException {
 
-        mLastLocation = LocationServices.FusedLocationApi
-                .getLastLocation(mGoogleApiClient);
+
 
         if (mLastLocation != null) {
             double latitude = mLastLocation.getLatitude();
@@ -395,91 +370,6 @@ public class DirectionActivity extends AppCompatActivity implements ConnectionCa
         tvAddress.setText(sb.toString());
     }
 
-    /**
-     * Creating google api client object
-     * */
-    protected synchronized void buildGoogleApiClient() {
-        mGoogleApiClient = new GoogleApiClient.Builder(this)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .addApi(LocationServices.API).build();
-    }
-
-    /**
-     * Creating location request object
-     * */
-    protected void createLocationRequest() {
-        mLocationRequest = new LocationRequest();
-        mLocationRequest.setInterval(UPDATE_INTERVAL);
-        mLocationRequest.setFastestInterval(FATEST_INTERVAL);
-        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-        mLocationRequest.setSmallestDisplacement(DISPLACEMENT);
-    }
-
-
-    /**
-     * Starting the location updates
-     * */
-    protected void startLocationUpdates() {
-
-        LocationServices.FusedLocationApi.requestLocationUpdates(
-                mGoogleApiClient, mLocationRequest, this);
-
-
-    }
-
-    /**
-     * Stopping location updates
-     */
-    protected void stopLocationUpdates() {
-        LocationServices.FusedLocationApi.removeLocationUpdates(
-                mGoogleApiClient, this);
-    }
-
-    /**
-     * Google api callback methods
-     */
-    @Override
-    public void onConnectionFailed(ConnectionResult result) {
-        Log.i(TAG, "Connection failed: ConnectionResult.getErrorCode() = "
-                + result.getErrorCode());
-    }
-
-    @Override
-    public void onConnected(Bundle arg0) {
-
-        // Once connected with google api, get the location
-        try {
-            displayLocation();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        if (mRequestingLocationUpdates) {
-            startLocationUpdates();
-        }
-    }
-
-    @Override
-    public void onConnectionSuspended(int arg0) {
-        mGoogleApiClient.connect();
-    }
-
-    @Override
-    public void onLocationChanged(Location location) {
-        // Assign the new location
-        mLastLocation = location;
-
-
-//        Toast.makeText(getApplicationContext(), "Location changed!",
-//                Toast.LENGTH_SHORT).show();
-
-
-
-
-        requestData(createUri());
-
-    }
     //routing functions
     public void route()
     {
@@ -669,8 +559,7 @@ public class DirectionActivity extends AppCompatActivity implements ConnectionCa
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                // Starting the location updates
-                startLocationUpdates();
+
 
             }
         }else if( mLastLocation == null){
@@ -1048,6 +937,27 @@ public class DirectionActivity extends AppCompatActivity implements ConnectionCa
         } else {
             Toast.makeText(this, "Network isn't available", Toast.LENGTH_LONG).show();
         }
+    }
+    private void getCurrentLocation(){
+        locationTracker = new LocationTracker(DirectionActivity.this, settings) {
+
+            @Override
+            public void onLocationFound(Location location) {
+                // Do some stuff when a new location has been found.
+                mLastLocation = location;
+                try {
+                    displayLocation();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onTimeout() {
+
+            }
+        };
+
     }
 
 

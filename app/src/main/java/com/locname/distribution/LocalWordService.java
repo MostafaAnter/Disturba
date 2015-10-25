@@ -104,7 +104,7 @@ public class LocalWordService extends Service {
                                 Double.parseDouble(preferences.getString(ShareValues.APP_PREFERENCES_TARGET_LONGITUDE, null))) <= 20.0) {
 
                             if (preferences.getBoolean(ShareValues.APP_PREFERENCES_DIALOG_OPEN, false) == false) {
-                                launchActivity();
+                               // launchActivity();
                             }
 //                            String boo =" Dialog is" + preferences.getBoolean(ShareValues.APP_PREFERENCES_DIALOG_OPEN, false);
 //                            Toast.makeText(LocalWordService.this,boo , Toast.LENGTH_SHORT).show();
